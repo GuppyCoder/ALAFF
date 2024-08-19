@@ -1,5 +1,4 @@
 function [ A_out, t_out, r_out ] = BiRed( A, t, r )
-
   [ ATL, ATR, ...
     ABL, ABR ] = FLA_Part_2x2( A, ...
                                0, 0, 'FLA_TL' );
@@ -13,7 +12,6 @@ function [ A_out, t_out, r_out ] = BiRed( A, t, r )
                          0, 'FLA_TOP' );
                      
   while ( size( ATL, 1 ) < size( A, 1 ) )
-
     [ A00,  a01,     A02,  ...
       a10t, alpha11, a12t, ...
       A20,  a21,     A22 ] = FLA_Repart_2x2_to_3x3( ATL, ATR, ...
@@ -42,21 +40,20 @@ function [ A_out, t_out, r_out ] = BiRed( A, t, r )
         [u_col, tau1] = Housev1(x_col);
         % Store tau1 in the t vector
         t(size(tT, 1) + 1) = tau1;
-        
         % Step 3: Update a21 and A22 using the Householder vector
         v = u_col(2:end);
         alpha11 = u_col(1);  % Update the diagonal element
         
-        if size(A22, 1) > 1 && size(A22, 2) > 1
+        if size(A22, 1) >= 1 
             % Form the full Householder vector u_col
             u_col_full = [1; v];
             
             % Apply the Householder transformation to [a12t; A22]
-            block_matrix = [a12t; A22'];
+            block_matrix = [a12t; A22];
             
             % Householder matrix H = I - (1/tau1) * u_col_full * u_col_full'
             H_col = eye(size(block_matrix, 1)) - (1/tau1) * (u_col_full * u_col_full');
-            
+           
             % Apply the transformation to the block matrix
             transformed_block = H_col * block_matrix;
             
@@ -64,17 +61,15 @@ function [ A_out, t_out, r_out ] = BiRed( A, t, r )
             a12t = transformed_block(1, :);  % Updated row vector
             A22 = transformed_block(2:end, :);  % Updated submatrix
         end
-
-        % Zero out all of a21
-        a21(:) = 0;
+       a21(:) = 0;   
     end
     
-    % Reassemble the matrix before proceeding to the row transformation
     [ ATL, ATR, ...
       ABL, ABR ] = FLA_Cont_with_3x3_to_2x2( A00,  a01,     A02,  ...
                                              a10t, alpha11, a12t, ...
                                              A20,  a21,     A22, ...
                                              'FLA_TL' );
+
 
     % Apply Householder transformation to the row (a12t)
     if size(a12t, 2) > 1
@@ -85,14 +80,16 @@ function [ A_out, t_out, r_out ] = BiRed( A, t, r )
         
         % Update a12t (the vector) and A22 (the submatrix)
         v_row = u_row(2:end);
-        alpha11 = u_row(1);  % Update the diagonal element for zeroing out row
+        
+        a12t(1) = u_row(1);  % Update the diagonal element for zeroing out row
         
         if size(A22, 1) > 1 && size(A22, 2) > 1
             % Form the full Householder vector u_row
             u_row_full = [1; v_row];
             
-            % Apply the Householder transformation to A22
-            A22 = A22 - (A22 * u_row_full) * u_row_full' / rho1;
+            % Householder matrix H_row
+            H_row = eye(size(A22, 1)) - (1/rho1) * (u_row_full * u_row_full');
+          
         end
         
         % Zero out all of a12t except its first element
@@ -128,5 +125,5 @@ function [ A_out, t_out, r_out ] = BiRed( A, t, r )
         
   r_out = [ rT
             rB ];
-
+  
 return
